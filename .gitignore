@@ -62,3 +62,10 @@ db/
 # internal agent work artifacts
 agent-ctx/
 worklog.md
+
+# sandbox platform plumbing (local-only, never published)
+/.zscripts/
+/mini-services/
+/examples/
+/tests/
+/Caddyfile
