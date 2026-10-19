@@ -9,7 +9,9 @@ import {
 } from "@/lib/pages";
 import { useReducedMotion } from "@/lib/motion";
 import { lenisResetScroll, lenisScrollTo, lenisScrollTopSmooth } from "@/lib/lenis";
+import { isPreloaderActive } from "@/lib/preload";
 import { Swoosh, type SwooshPhase } from "./swoosh";
+import { Preloader } from "./preloader";
 import { SiteHeader } from "./site-header";
 import { SiteFooter } from "./site-footer";
 
@@ -164,23 +166,19 @@ export function KramoraSite() {
     startTransition(to);
   }, [startTransition]);
 
-  /* ---- initial load: parse hash + intro swoosh ----
+  /* ---- initial load: parse hash + first reveal ----
      All state changes run inside timer callbacks (async), which keeps
-     the effect body free of synchronous setState. The intro waits
-     ~2 frames past mount: firing at 0ms can land while React is
-     still hydrating (especially on cold loads), which makes React
-     abandon the in-flight hydration pass and log a spurious
-     aria-controls mismatch for the header Sheet. */
+     the effect body free of synchronous setState. With the Preloader
+     covering first load, the deep-link swap happens hidden beneath it
+     and the loader's own sweep IS the reveal — the intro swoosh only
+     plays as a fallback when the loader is not active. */
   useEffect(() => {
     const initial = pageIdFromHash(location.hash);
     document.title = PAGE_MAP[initial].docTitle;
-    if (reducedRef.current) {
-      later(() => swap(initial), 90);
-      return;
-    }
-    // intro: panels start covering (no animation), hold the wordmark, lift away
     later(() => {
       swap(initial);
+      if (isPreloaderActive() || reducedRef.current) return;
+      // fallback intro: panels cover, hold the wordmark, lift away
       setTrans({ to: initial, phase: "cover", intro: true });
       later(() => {
         setTrans((t) => (t ? { ...t, phase: "reveal" } : t));
@@ -215,6 +213,9 @@ export function KramoraSite() {
         label={label}
         intro={trans?.intro}
       />
+      {/* first-load cover — paints with the server HTML, lifts once
+          fonts + the Vanta hero are ready beneath it */}
+      <Preloader />
       <div aria-live="polite" className="sr-only">
         {`Page ${meta.n} — ${meta.title}`}
       </div>

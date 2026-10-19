@@ -57,6 +57,17 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap"
           rel="stylesheet"
         />
+        {/* Preloader failsafe: if React never takes over (JS disabled
+            or a stalled bundle), remove the first-load cover after
+            3.5s so the server-rendered content stays readable.
+            The Preloader marks itself with data-live once mounted,
+            which cancels this. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "setTimeout(function(){var p=document.getElementById('k-preloader');if(p&&!p.hasAttribute('data-live'))p.remove()},3500)",
+          }}
+        />
       </head>
       <body className="min-h-screen bg-white font-sans text-slate-900 antialiased">
         {/* Lenis inertial scrolling — desktop only, registered globally

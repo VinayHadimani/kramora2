@@ -1,4 +1,5 @@
 import type Lenis from "lenis";
+import { isScrollLocked } from "./preload";
 
 /* =============================================================
    Lenis handle + viewport helpers.
@@ -14,6 +15,10 @@ let instance: Lenis | null = null;
 
 export function setLenis(next: Lenis | null) {
   instance = next;
+  // created while the first-load preloader holds the viewport (the
+  // provider mounts after the loader locks scroll) — start stopped;
+  // the loader restarts it when its cover lifts
+  if (next && isScrollLocked()) next.stop();
 }
 
 export function getLenis(): Lenis | null {

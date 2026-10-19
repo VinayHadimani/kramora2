@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Activity } from "lucide-react";
 import { STATS } from "@/lib/site-data";
-import { useReducedMotion, useScrollFrames } from "@/lib/motion";
+import { useReducedMotion, useScrollFrames, whenRevealGateOpen } from "@/lib/motion";
 
 const SPARK = "M2 30 C 16 27, 24 28, 34 23 S 54 19, 64 21 S 88 10, 118 4";
 
@@ -43,17 +43,23 @@ export function GlassCard() {
   useEffect(() => {
     const el = cardRef.current;
     if (!el) return;
+    let offGate: (() => void) | undefined;
     const io = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting) {
-          setSeen(true);
-          io.disconnect();
-        }
+        if (!entries[0]?.isIntersecting) return;
+        io.disconnect();
+        // hold the count-up + sparkline until the first-load loader
+        // lifts — they play as the cover sweeps away, not unseen
+        // beneath it
+        offGate = whenRevealGateOpen(() => setSeen(true));
       },
       { threshold: 0.3 },
     );
     io.observe(el);
-    return () => io.disconnect();
+    return () => {
+      io.disconnect();
+      offGate?.();
+    };
   }, []);
 
   const perf = useCountUp(34, seen && !reduced);

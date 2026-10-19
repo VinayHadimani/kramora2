@@ -151,6 +151,42 @@ let revealIO: IntersectionObserver | null = null;
 /** elements waiting to be revealed — used by the jump backstop */
 const pendingReveals = new Set<Element>();
 
+/* ---------------- Reveal gate (first-load choreography) ----------------
+   While the preloader covers the first paint, in-viewport elements
+   queue instead of revealing; when the loader starts to lift, the
+   gate opens and the hero cascades in with its existing staggers.
+   Once open it stays open — transparent for all later SPA
+   navigations. */
+let revealGateOpen = false;
+const gateQueue = new Set<Element>();
+const gateListeners = new Set<() => void>();
+
+export function openRevealGate() {
+  if (revealGateOpen) return;
+  revealGateOpen = true;
+  for (const el of gateQueue) revealEl(el);
+  gateQueue.clear();
+  for (const l of [...gateListeners]) l();
+  gateListeners.clear();
+}
+
+/**
+ * Run `cb` once the first-load reveal gate opens (immediately if
+ * it already is). Used by mount-triggered animations (count-ups,
+ * self-drawing charts) so they play as the loader lifts, not
+ * unseen beneath it.
+ */
+export function whenRevealGateOpen(cb: () => void): () => void {
+  if (revealGateOpen) {
+    cb();
+    return () => undefined;
+  }
+  gateListeners.add(cb);
+  return () => {
+    gateListeners.delete(cb);
+  };
+}
+
 function revealEl(el: Element) {
   el.classList.add("is-in");
   pendingReveals.delete(el);
@@ -162,7 +198,9 @@ function getRevealIO() {
   revealIO = new IntersectionObserver(
     (entries) => {
       entries.forEach((e) => {
-        if (e.isIntersecting) revealEl(e.target);
+        if (!e.isIntersecting) return;
+        if (revealGateOpen) revealEl(e.target);
+        else gateQueue.add(e.target);
       });
     },
     { threshold: 0.15, rootMargin: "0px 0px -7% 0px" },
@@ -189,6 +227,7 @@ export function observeReveal(el: Element) {
   pendingReveals.add(el);
   return () => {
     pendingReveals.delete(el);
+    gateQueue.delete(el);
     getRevealIO().unobserve(el);
   };
 }

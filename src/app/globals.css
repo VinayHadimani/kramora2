@@ -293,6 +293,53 @@
   transform-origin: 50% 50%;
 }
 
+/* ---------- Preloader (first-load cover) ---------- */
+.pl-mask {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  /* room for the italic serif's right overhang — the clip box is
+     widened without shifting the layout */
+  padding-inline: 0.12em;
+  margin-inline: -0.12em;
+}
+.pl-letter {
+  display: inline-block;
+  transform: translateY(120%);
+  opacity: 0;
+  animation: pl-rise 0.56s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes pl-rise {
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.pl-fade {
+  opacity: 0;
+  animation: pl-fade-in 0.55s ease forwards;
+}
+@keyframes pl-fade-in {
+  to {
+    opacity: 1;
+  }
+}
+.preloader-bar {
+  transform: scaleX(0.06);
+  animation: pl-bar 2.6s cubic-bezier(0.33, 0, 0.2, 1) forwards;
+}
+@keyframes pl-bar {
+  0% {
+    transform: scaleX(0.06);
+  }
+  70% {
+    transform: scaleX(0.72);
+  }
+  100% {
+    transform: scaleX(0.78);
+  }
+}
+
 /* ---------- Sparkline self-draw (hero glass card) ---------- */
 .spark-line {
   stroke-dasharray: 1;
@@ -339,8 +386,19 @@
   .page-fade-up,
   .morph-in,
   .morph-out,
-  .aurora-bar {
+  .aurora-bar,
+  .pl-letter,
+  .pl-fade,
+  .preloader-bar {
     animation: none !important;
+  }
+  .pl-letter,
+  .pl-fade {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .preloader-bar {
+    transform: scaleX(0.6) !important;
   }
   .circuit-flow,
   .circuit-pulse {
